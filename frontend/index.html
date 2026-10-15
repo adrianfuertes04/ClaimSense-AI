@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InsurTriage AI - Property Damage Claim Triage System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="background-glow top-left"></div>
+  <div class="background-glow bottom-right"></div>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="container header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <h1>InsurTriage <span>AI</span></h1>
+          <p class="subtitle">Autonomous Multi-Agent Claim Triage Platform &bull; ReAct Loop + Vector RAG</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="system-status">
+          <span class="status-badge" id="system-health">
+            <span class="status-dot"></span> API: Connected
+          </span>
+        </div>
+        <button type="button" class="btn-ghost" id="reset-form-btn" title="Reset submission form">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- QUICK DEMO PRESETS BAR -->
+  <aside class="container presets-bar">
+    <div class="presets-wrapper">
+      <span class="presets-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        Demo Quick-Fill:
+      </span>
+      <div class="presets-chips">
+        <button type="button" class="preset-btn" data-preset="water">💧 Burst Pipe (Water)</button>
+        <button type="button" class="preset-btn" data-preset="fire">🔥 Kitchen Fire</button>
+        <button type="button" class="preset-btn" data-preset="storm">🌪️ Roof Storm Damage</button>
+        <button type="button" class="preset-btn" data-preset="break_in">🚪 Forced Entry Burglary</button>
+        <button type="button" class="preset-btn preset-danger" data-preset="pii">🛡️ Test PII Card (Negative)</button>
+        <button type="button" class="preset-btn preset-danger" data-preset="pet">🐾 Test Pet Image (Negative)</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT GRID -->
+  <main class="container main-content">
+    <div class="layout-grid">
+      
+      <!-- SUBMISSION PANEL -->
+      <section class="card submission-card">
+        <div class="card-header">
+          <div class="section-badge">Step 1</div>
+          <h2>Submit Claim Evidence</h2>
+          <p>Provide damage photos, claimant description, and optional inspection reports.</p>
+        </div>
+
+        <form id="triage-form" class="form-flow">
+          <!-- Photo Upload -->
+          <div class="form-group">
+            <label for="image-upload" class="form-label">
+              <span>Damage Photos</span>
+              <span class="badge-hint">JPEG / PNG &bull; Multiple views supported</span>
+            </label>
+            <div class="upload-dropzone" id="dropzone">
+              <input type="file" id="image-upload" name="images" accept="image/jpeg,image/png" multiple class="file-input">
+              <div class="dropzone-content">
+                <div class="upload-icon-circle">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <p><strong>Click to browse</strong> or drag &amp; drop damage photos</p>
+                <span class="text-muted">High-resolution photos allow accurate severity and room analysis</span>
+              </div>
+            </div>
+
+            <!-- Preview Gallery Grid -->
+            <div id="image-previews-container" class="image-gallery-grid hidden"></div>
+            <div id="file-preview-list" class="preview-chips hidden"></div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description" class="form-label">
+              <span>Incident Description</span>
+              <span class="badge-hint">Required for text-only triage</span>
+            </label>
+            <textarea id="description" name="description" rows="3" placeholder="Describe the origin, location, and nature of the damage (e.g. A burst supply pipe under the kitchen sink caused extensive water pooling across tiles and baseboards)..." class="text-input"></textarea>
+          </div>
+
+          <!-- Supporting Document -->
+          <div class="form-group">
+            <label for="doc-upload" class="form-label">
+              <span>Supporting Inspection Document</span>
+              <span class="badge-hint">Optional PDF</span>
+            </label>
+            <div class="compact-upload" id="compact-pdf-box">
+              <input type="file" id="doc-upload" name="document" accept="application/pdf" class="file-input">
+              <div class="compact-upload-label">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span id="doc-name">Attach adjuster or contractor PDF report...</span>
+              </div>
+              <button type="button" class="btn-remove-doc hidden" id="remove-doc-btn" title="Remove PDF">&times;</button>
+            </div>
+          </div>
+
+          <!-- Policy Type -->
+          <div class="form-group">
+            <label for="policy-type" class="form-label">Policy Type</label>
+            <div class="select-wrapper">
+              <select id="policy-type" name="policy_type" class="select-input">
+                <option value="standard_homeowner" selected>Standard Homeowner (HO-3) &bull; $1,500 Deductible &bull; $250k Max</option>
+                <option value="premium_homeowner">Premium Homeowner (Comprehensive) &bull; $500 Deductible &bull; $500k Max</option>
+                <option value="basic_homeowner">Basic Homeowner (Named Perils) &bull; $2,500 Deductible &bull; $100k Max</option>
+                <option value="renters">Renters (Contents &amp; Liability) &bull; $500 Deductible &bull; $50k Max</option>
+                <option value="landlord">Landlord (Dwelling) &bull; $2,000 Deductible &bull; $350k Max</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Submit Button & Live Progress -->
+          <div class="action-submit-area">
+            <button type="submit" id="submit-btn" class="submit-button">
+              <span class="btn-text">Execute Autonomous Triage</span>
+              <div class="btn-spinner hidden" id="spinner"></div>
+            </button>
+
+            <!-- Active Execution Stepper -->
+            <div class="live-stepper hidden" id="live-stepper">
+              <div class="stepper-header">
+                <span class="stepper-dot"></span>
+                <span class="stepper-title" id="stepper-status-text">Analyzing evidence &amp; verifying intake guardrails...</span>
+              </div>
+              <div class="stepper-bar">
+                <div class="stepper-progress" id="stepper-bar-fill"></div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- RESULTS & TRIAGE REPORT PANEL -->
+      <section class="card results-card" id="results-area">
+        <div class="card-header flex-between">
+          <div>
+            <div class="section-badge">Step 2</div>
+            <h2>Triage Report &amp; ReAct Execution Trace</h2>
+          </div>
+          <div class="report-header-pills">
+            <span class="claim-pill hidden" id="claim-id-badge">ID: -</span>
+            <button type="button" class="btn-copy-report hidden" id="copy-json-btn" title="Copy full report as JSON">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Copy JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon-circle">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.5L19 7.5V19a2 2 0 0 1-2 2z"/>
+            </svg>
+          </div>
+          <h3>Ready for Claim Assessment</h3>
+          <p>Submit claim photos or a text description on the left to trigger the autonomous multi-agent ReAct triage workflow.</p>
+          <div class="empty-quick-hint">
+            <span>Tip: Click any <strong>Demo Quick-Fill</strong> preset above to test immediately.</span>
+          </div>
+        </div>
+
+        <!-- Results Content Container -->
+        <div id="results-content" class="results-content hidden">
+          
+          <!-- Validation Banner -->
+          <div class="assessment-banner" id="validation-banner">
+            <div class="banner-title">
+              <span class="icon-indicator success" id="val-icon">&check;</span>
+              <span id="val-headline">Intake Guardrails Verified</span>
+            </div>
+            <div class="flags-grid" id="val-flags"></div>
+          </div>
+
+          <!-- Key Assessment KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-label">Damage Type</span>
+              <div class="kpi-value-row">
+                <span class="damage-type-icon" id="res-damage-icon">💥</span>
+                <span class="kpi-value highlight" id="res-damage-type">-</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Severity Level</span>
+              <span class="kpi-value" id="res-severity">-</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Urgency</span>
+              <span class="urgency-pill" id="res-urgency">-</span>
+            </div>
+            <div class="kpi-card highlight-card">
+              <span class="kpi-label">Estimated Repair Cost</span>
+              <span class="kpi-value cost-value" id="res-cost">-</span>
+              <span class="cost-disclaimer">Standard Table Scope</span>
+            </div>
+          </div>
+
+          <!-- Cost Visual Range Bar -->
+          <div class="cost-visual-card" id="cost-visual-section">
+            <div class="cost-range-header flex-between">
+              <span class="cost-range-label">Actuarial Cost Range Spectrum</span>
+              <span class="cost-range-details" id="cost-spectrum-text">$0 - $0 USD</span>
+            </div>
+            <div class="spectrum-bar-track">
+              <div class="spectrum-bar-fill" id="spectrum-fill"></div>
+              <div class="deductible-marker" id="deductible-marker" title="Policy Deductible">
+                <span class="marker-flag">Deductible</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Affected Areas & Description -->
+          <div class="report-section">
+            <h4>Affected Areas</h4>
+            <div class="chips-list" id="res-areas"></div>
+          </div>
+
+          <div class="report-section">
+            <h4>Damage Assessment</h4>
+            <p id="res-description" class="prose-text">-</p>
+          </div>
+
+          <div class="report-section">
+            <h4>Adjuster Next-Steps Recommendation</h4>
+            <div class="recommendation-box">
+              <p id="res-recommendation" class="prose-text">-</p>
+            </div>
+          </div>
+
+          <!-- Output Safety Checklist -->
+          <div class="report-section safety-section">
+            <h4>Output Safety Compliance &bull; Guardrails</h4>
+            <div class="safety-grid" id="safety-checklist"></div>
+          </div>
+
+          <!-- Historical Precedents (RAG) -->
+          <div class="report-section">
+            <div class="flex-between section-title-row">
+              <h4>Historical Claims Precedents (Vector RAG)</h4>
+              <span class="source-tag">Qdrant Vector Store</span>
+            </div>
+            <div class="citations-list" id="res-citations"></div>
+          </div>
+
+          <!-- ReAct Execution Trace -->
+          <div class="report-section trace-section">
+            <div class="trace-header flex-between">
+              <div>
+                <h4>ReAct Agent Execution Trace</h4>
+                <p class="trace-sub">Auditable Reason &rarr; Act &rarr; Observe timeline</p>
+              </div>
+              <div class="trace-meta-tags">
+                <span class="steps-count-tag" id="res-steps-count">0 steps</span>
+                <span class="duration-tag" id="res-duration">- ms</span>
+              </div>
+            </div>
+
+            <!-- Trace Filter Buttons -->
+            <div class="trace-filters">
+              <button type="button" class="trace-filter-btn active" data-filter="all">All Events</button>
+              <button type="button" class="trace-filter-btn" data-filter="reason">Reason 🧠</button>
+              <button type="button" class="trace-filter-btn" data-filter="act">Act ⚙️</button>
+              <button type="button" class="trace-filter-btn" data-filter="observe">Observe 👁️</button>
+            </div>
+
+            <div class="timeline" id="res-trace-timeline"></div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
